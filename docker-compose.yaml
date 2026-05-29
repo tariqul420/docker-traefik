@@ -1,0 +1,34 @@
+services:
+  traefik:
+    image: traefik:v3.3
+    container_name: traefik
+    restart: unless-stopped
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock:ro
+      - ./traefik.yml:/traefik.yml:ro
+      - ./acme.json:/acme.json
+      - ./dynamic:/dynamic:ro
+    networks:
+      - proxy
+      - web
+    labels:
+      - "traefik.enable=true"
+      - "traefik.docker.network=proxy"
+      - "traefik.http.routers.dashboard.rule=Host(`example.example.com`)"
+      - "traefik.http.routers.dashboard.entrypoints=websecure"
+      - "traefik.http.routers.dashboard.tls=true"
+      - "traefik.http.routers.dashboard.tls.certresolver=letsencrypt"
+      - "traefik.http.routers.dashboard.service=api@internal"
+      - "traefik.http.middlewares.dashboard-redirect.redirectregex.regex=^/$"
+      - "traefik.http.middlewares.dashboard-redirect.redirectregex.replacement=/dashboard/"
+      - "traefik.http.middlewares.dashboard-redirect.redirectregex.permanent=true"
+      - "traefik.http.routers.dashboard.middlewares=dashboard-redirect,dashboard-auth"
+
+networks:
+  proxy:
+    external: true
+  web:
+    external: true
